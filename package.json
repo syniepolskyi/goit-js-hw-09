@@ -16,7 +16,9 @@
   "license": "ISC",
   "dependencies": {
     "modern-normalize": "^1.1.0",
-    "lodash.throttle": "*"
+    "flatpickr": "*",
+    "notiflix": "*",
+    "lodash": "*"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.6.0",
