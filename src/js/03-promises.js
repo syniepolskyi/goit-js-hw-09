@@ -18,13 +18,32 @@ function createPromise(position, delay) {
 }
 
 function validate(form){
-  const keys = ['amount', 'delay', 'step']
-  return keys.reduce((acc,key) =>{
-    let v = parseInt(form.elements[key].value,10)
-    let valid = (!isNaN(v) && v > 0)
-    if(!valid){
-      Notify.warning(`${key} must be integer > 0`)
+  const validators = {
+    amount : (value) => {
+      let valid = !isNaN(value) && value > 0
+      if(!valid){
+        Notify.warning(`amount must be integer > 0`)
+      }
+      return valid
+    }, 
+    delay: (value) => {
+      let valid = !isNaN(value) && value >= 0
+      if(!valid){
+        Notify.warning(`delay must be integer >= 0`)
+      }
+      return valid
+    }, 
+    step: (value) => {
+      let valid = !isNaN(value) && value >= 0
+      if(!valid){
+        Notify.warning(`step must be integer >= 0`)
+      }
+      return valid
     }
+  }
+  return Object.keys(validators).reduce((acc,key) =>{
+    let v = parseInt(form.elements[key].value,10)
+    let valid = validators[key](v)
     return acc && valid
   }, true)
 }
@@ -36,26 +55,28 @@ function doPromises(data){
   const delay = parseInt(elems['delay'].value,10)
   const step = parseInt(elems['step'].value,10)
   let currDelay = step
-  if(position === 1){
-    form.setAttribute("pending","true")
-    currDelay = delay
-  }
-  const promise = createPromise(position, currDelay )
-  promise.then((data) => {
-    const {position, delay} = data
-    Notify.success(`✅ Fulfilled promise ${position} in ${delay}ms`)
-  })
-  .catch((data) => {
-    const {position, delay} = data
-    Notify.failure(`❌ Rejected promise ${position} in ${delay}ms`)
-  })
-  .finally(() => {
-    if(position < amount){
-      data.position++
-      return doPromises(data)
+  form.setAttribute("pending","true")
+  currDelay = delay
+  const unblocking = (position) =>{
+    if(position === amount){
+      form.removeAttribute("pending")
     }
-    form.removeAttribute("pending")
-  })
+  }
+  for (let i = 0; i < amount; i++){
+    const promise = createPromise(i+1, currDelay)
+    promise.then((data) => {
+      const {position, delay} = data
+      Notify.success(`✅ Fulfilled promise ${position} in ${delay}ms`)
+      unblocking(position)
+    })
+    .catch((data) => {
+      const {position, delay} = data
+      Notify.failure(`❌ Rejected promise ${position} in ${delay}ms`)
+      unblocking(position)
+    })
+    currDelay += step
+  }
+
 
 }
 
